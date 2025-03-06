@@ -1,0 +1,97 @@
+models
+namespace EMBGVerificationAPI.models
+{
+    public class EmbgModel
+    {
+       
+            public string EMBG { get; set; } = string.Empty;
+            public bool IsValid { get; set; }
+            public string Message { get; set; } = string.Empty;
+        
+    }
+} 
+
+service
+
+namespace EMBGVerificationAPI.Services
+{
+        public class EmbgService
+        {
+            public EmbgModel ValidateEMBG(string embg)
+            {
+                var response = new EmbgModel { EMBG = embg };
+
+                if (string.IsNullOrWhiteSpace(embg) || embg.Length != 13 || !embg.All(char.IsDigit))
+                {
+                    response.IsValid = false;
+                    response.Message = "Невалиден ЕМБГ. Мора да содржи 13 цифри.";
+                    return response;
+                }
+
+                // Овде може да додадеш дополнителна валидација според официјални правила
+
+                response.IsValid = true;
+                response.Message = "ЕМБГ е валиден.";
+                return response;
+            }
+        }
+    }
+
+program.cs
+using EMBGVerificationAPI.Services;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Додавање на сервисите за API контролери
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddSingleton<EmbgService>();
+
+var app = builder.Build();
+
+// Конфигурирање на middleware
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers(); // Овозможува рутирање до контролерите
+
+app.Run();
+
+controllers
+using Microsoft.AspNetCore.Mvc;
+
+namespace EMBGVerificationAPI.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class EmbgController : ControllerBase
+    {
+        [HttpGet("{embg}")]
+        public IActionResult ValidateEMBG(string embg)
+        {
+            if (IsValidEMBG(embg))
+            {
+                return Ok(new { isValid = true });
+            }
+            return BadRequest(new { isValid = false, message = "Невалиден ЕМБГ" });
+        }
+
+        private bool IsValidEMBG(string embg)
+        {
+            // Проверка дали има точно 13 цифри
+            if (string.IsNullOrWhiteSpace(embg) || embg.Length != 13 || !embg.All(char.IsDigit))
+                return false;
+
+            // Додади дополнителна логика ако треба (пример: проверка според формула)
+
+            return true; // Привремено ја враќаме како валидна
+        }
+    }
+}
